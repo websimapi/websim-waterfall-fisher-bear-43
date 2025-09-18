@@ -6,12 +6,14 @@ import { initAudio, playSFX, sounds, wireAudioUnlock } from './audio.js';
 import { bindUI, updateUIValues, showGameOver, showHUD, showStart, populateUnlocks } from './ui.js';
 import { BEARS, FISH, getPlayerProgress, savePlayerProgress } from '../unlocks.js';
 import { updateSpawner, resetSpawner } from './fishSpawner.js';
+import { Bear } from '../entities/bear.js';
 
 // --- GAME OBJECTS ---
 export let bear = null;
 let showcaseBear = null;
 let showcaseFish = null;
 let activeFishes = [];
+let bearInstance = null;
 
 // --- UI & STATE ---
 const { startButton } = bindUI();
@@ -23,7 +25,7 @@ let isFirstLoad = true;
 function refreshShowcase() {
     // Clean up existing showcase objects
     if (showcaseBear) { 
-        scene.remove(showcaseBear); 
+        scene.remove(showcaseBear.group);
         showcaseBear = null; 
     }
     if (showcaseFish) { 
@@ -33,19 +35,19 @@ function refreshShowcase() {
     }
     
     // Create showcase bear - ensure it's fully created before proceeding
-    showcaseBear = createBear(playerProgress.selectedBear);
-    showcaseBear.name = 'showcase-bear';
-    showcaseBear.userData.isShowcase = true;
-    showcaseBear.position.set(0, 4.65, 0.8);
-    showcaseBear.rotation.set(0, 0, 0); // Face camera
-    scene.add(showcaseBear);
+    showcaseBear = new Bear(playerProgress.selectedBear);
+    showcaseBear.group.name = 'showcase-bear';
+    showcaseBear.group.userData.isShowcase = true;
+    showcaseBear.group.position.set(0, 4.65, 0.8);
+    showcaseBear.group.rotation.set(0, 0, 0); // Face camera
+    scene.add(showcaseBear.group);
     
     // Create and attach fish immediately (no timeout)
-    const fishOptions = { skipSceneAdd: true };
-    showcaseFish = createFish(scene, 0, playerProgress.selectedFish, fishOptions);
+    showcaseFish = createFish(scene, 0, playerProgress.selectedFish, { skipSceneAdd: true });
     showcaseFish.name = 'showcase-fish';
     showcaseFish.userData.isShowcase = true;
-    const rightArm = showcaseBear.getObjectByName('rightArm');
+    showcaseBear.attachFish(showcaseFish);
+    const rightArm = showcaseBear.group.getObjectByName('rightArm');
     if (rightArm) {
         rightArm.visible = true;
         showcaseFish.position.set(0, 0, 0);
@@ -72,10 +74,7 @@ function setupStartScreen() {
     gameState.current = 'IDLE';
 
     // Remove old game bear if it exists
-    if (bear) {
-        scene.remove(bear);
-        bear = null;
-    }
+    if (bearInstance) { bearInstance.removeFrom(scene); bearInstance = null; bear = null; }
     
     scene.children.forEach(child => {
         if (child.name !== 'showcase-bear' && child.userData && !child.userData.isStatic) {
@@ -116,15 +115,17 @@ function setupStartScreen() {
 
 function startGame() {
     gameState = { current: 'PLAYING', score: 0, streak: 1 };
-    if (showcaseBear) { scene.remove(showcaseBear); showcaseBear = null; }
+    if (showcaseBear) { showcaseBear.removeFrom(scene); showcaseBear = null; }
     if (showcaseFish) { 
         if(showcaseFish.parent) showcaseFish.parent.remove(showcaseFish);
         else scene.remove(showcaseFish); 
         showcaseFish = null; 
     }
 
-    if (bear) scene.remove(bear);
-    bear = createBear(playerProgress.selectedBear);
+    if (bearInstance) { bearInstance.removeFrom(scene); }
+
+    bearInstance = new Bear(playerProgress.selectedBear);
+    bear = bearInstance.group;
     bear.userData.isStatic = false; // Mark game objects
     scene.add(bear);
 
@@ -174,10 +175,7 @@ function gameOver() {
                 goScreen.removeEventListener('animationend', onFadeOut);
                 
                 // Explicitly remove the game bear before setting up the start screen
-                if (bear) {
-                    scene.remove(bear);
-                    bear = null;
-                }
+                if (bearInstance) { bearInstance.removeFrom(scene); bearInstance = null; bear = null; }
 
                 setupStartScreen();
                 startButton.innerText = 'RETRY';
@@ -228,12 +226,9 @@ export function updateGame() {
         }
     } else { // IDLE
         gameState.idleAnimTimer += 0.05;
-        if (showcaseBear) {
-            const rightArm = showcaseBear.getObjectByName('rightArm');
-            if (rightArm) {
-                const armBob = Math.sin(gameState.idleAnimTimer) * 0.1;
-                rightArm.rotation.x = armBob;
-            }
+        if (showcaseBear?.group) {
+            const rightArm = showcaseBear.group.getObjectByName('rightArm');
+            if (rightArm) rightArm.rotation.x = Math.sin(gameState.idleAnimTimer) * 0.1;
         }
     }
 }

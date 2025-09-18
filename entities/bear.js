@@ -83,3 +83,30 @@ export function updateBear(bear, moveDirection) {
         bear.rotation.z = THREE.MathUtils.lerp(bear.rotation.z, 0, 0.1);
     }
 }
+
+export class Bear {
+    constructor(type = 'splashy') {
+        this.type = type;
+        this.group = createBear(type);
+        this.group.name = 'bear';
+    }
+    addTo(scene) { if (this.group && scene) scene.add(this.group); }
+    removeFrom(scene) { 
+        if (!this.group || !scene) return;
+        const parent = this.group.parent;
+        if (parent) parent.remove(this.group);
+    }
+    get rightArm() { return this.group.getObjectByName('rightArm'); }
+    attachFish(fish) {
+        const arm = this.rightArm;
+        if (!arm || !fish) return;
+        fish.position.set(0, 0, 0);
+        fish.rotation.set(0, 0, 0);
+        fish.scale.set(1, 1, 1);
+        arm.add(fish);
+        fish.visible = true;
+        fish.position.set(0.1, -0.7, 0.4);
+        fish.rotation.set(-Math.PI / 4, Math.PI / 2, Math.PI);
+        fish.scale.set(0.5, 0.5, 0.5);
+    }
+}
