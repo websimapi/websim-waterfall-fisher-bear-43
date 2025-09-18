@@ -22,60 +22,60 @@ export let gameState = { current: 'IDLE', score: 0, streak: 1, idleAnimTimer: 0 
 const gravity = new THREE.Vector3(0, -0.05, 0);
 let isFirstLoad = true;
 
-function refreshShowcase() {
-    // Clean up existing showcase objects
-    if (showcaseBear) { 
-        scene.remove(showcaseBear.group);
-        showcaseBear = null; 
-    }
-    if (showcaseFish) { 
-        if(showcaseFish.parent) showcaseFish.parent.remove(showcaseFish);
-        else scene.remove(showcaseFish); 
-        showcaseFish = null; 
+function createAndDisplayShowcaseBear() {
+    // Comprehensive cleanup of any existing showcase objects
+    if (showcaseBear) {
+        if (showcaseBear.group.parent) {
+            showcaseBear.group.parent.remove(showcaseBear.group);
+        }
+        showcaseBear = null;
     }
     
-    // Create showcase bear - ensure it's fully created before proceeding
+    if (showcaseFish) {
+        if (showcaseFish.parent) {
+            showcaseFish.parent.remove(showcaseFish);
+        } else if (showcaseFish.parent === null) {
+            scene.remove(showcaseFish);
+        }
+        showcaseFish = null;
+    }
+
+    // Create new showcase bear
     showcaseBear = new Bear(playerProgress.selectedBear);
     showcaseBear.group.name = 'showcase-bear';
     showcaseBear.group.userData.isShowcase = true;
     showcaseBear.group.position.set(0, 4.65, 0.8);
-    showcaseBear.group.rotation.set(0, 0, 0); // Face camera
+    showcaseBear.group.rotation.set(0, 0, 0);
     scene.add(showcaseBear.group);
-    
-    // Create and attach fish immediately (no timeout)
+
+    // Create showcase fish
     showcaseFish = createFish(scene, 0, playerProgress.selectedFish, { skipSceneAdd: true });
     showcaseFish.name = 'showcase-fish';
     showcaseFish.userData.isShowcase = true;
+    
+    // Attach fish to bear using the standardized method
     showcaseBear.attachFish(showcaseFish);
-    const rightArm = showcaseBear.group.getObjectByName('rightArm');
-    if (rightArm) {
-        rightArm.visible = true;
-        showcaseFish.position.set(0, 0, 0);
-        showcaseFish.rotation.set(0, 0, 0);
-        showcaseFish.scale.set(1, 1, 1);
-        rightArm.add(showcaseFish);
-        showcaseFish.visible = true;
-        showcaseFish.position.set(0.1, -0.7, 0.4);
-        showcaseFish.rotation.set(-Math.PI / 4, Math.PI / 2, Math.PI);
-        showcaseFish.scale.set(0.5, 0.5, 0.5);
-    } else {
-        console.warn('Right arm not found on showcase bear, using fallback position');
-        showcaseFish.position.set(2.0, 2.3, -1.5);
-        showcaseFish.visible = true;
-        scene.add(showcaseFish);
-    }
-
-    // Disable fish movement animations
+    
+    // Disable fish animations
     if (showcaseFish.userData?.velocity) showcaseFish.userData.velocity.set(0, 0, 0);
     if (showcaseFish.userData) showcaseFish.userData.swimAmplitude = 0;
+}
+
+function refreshShowcase() {
+    createAndDisplayShowcaseBear();
 }
 
 function setupStartScreen() {
     gameState.current = 'IDLE';
 
-    // Remove old game bear if it exists
-    if (bearInstance) { bearInstance.removeFrom(scene); bearInstance = null; bear = null; }
+    // Remove game bear completely
+    if (bearInstance) { 
+        bearInstance.removeFrom(scene); 
+        bearInstance = null; 
+        bear = null; 
+    }
     
+    // Clean up any remaining game objects
     scene.children.forEach(child => {
         if (child.name !== 'showcase-bear' && child.userData && !child.userData.isStatic) {
              if(child.name === 'fish' || child.name === 'bear') {
@@ -105,9 +105,10 @@ function setupStartScreen() {
         if(quickFishName) quickFishName.textContent = selectedFishInfo.name;
         if(quickFishImg) quickFishImg.src = selectedFishInfo.asset;
 
-        refreshShowcase();
+        createAndDisplayShowcaseBear();
     });
-    refreshShowcase();
+    
+    createAndDisplayShowcaseBear();
     showStart(isFirstLoad);
     isFirstLoad = false;
     startButton.innerText = 'START';
@@ -174,8 +175,12 @@ function gameOver() {
             const onFadeOut = () => {
                 goScreen.removeEventListener('animationend', onFadeOut);
                 
-                // Explicitly remove the game bear before setting up the start screen
-                if (bearInstance) { bearInstance.removeFrom(scene); bearInstance = null; bear = null; }
+                // Complete cleanup before restart
+                if (bearInstance) { 
+                    bearInstance.removeFrom(scene); 
+                    bearInstance = null; 
+                    bear = null; 
+                }
 
                 setupStartScreen();
                 startButton.innerText = 'RETRY';
