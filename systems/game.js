@@ -40,7 +40,7 @@ function createAndDisplayShowcaseBear() {
         showcaseFish = null;
     }
 
-    // Create new showcase bear
+    // Create new showcase bear with explicit cleanup first
     showcaseBear = new Bear(playerProgress.selectedBear);
     showcaseBear.group.name = 'showcase-bear';
     showcaseBear.group.userData.isShowcase = true;
@@ -48,10 +48,16 @@ function createAndDisplayShowcaseBear() {
     showcaseBear.group.rotation.set(0, 0, 0);
     scene.add(showcaseBear.group);
 
-    // Create showcase fish
+    // Create showcase fish and ensure it's properly configured
     showcaseFish = createFish(scene, 0, playerProgress.selectedFish, { skipSceneAdd: true });
     showcaseFish.name = 'showcase-fish';
     showcaseFish.userData.isShowcase = true;
+    
+    // Force ensure the fish is visible and properly configured before attachment
+    showcaseFish.visible = true;
+    showcaseFish.position.set(0, 0, 0);
+    showcaseFish.rotation.set(0, 0, 0);
+    showcaseFish.scale.set(1, 1, 1);
     
     // Attach fish to bear using the standardized method
     showcaseBear.attachFish(showcaseFish);
@@ -75,9 +81,9 @@ function setupStartScreen() {
         bear = null; 
     }
     
-    // Clean up any remaining game objects
+    // Clean up any remaining game objects (but preserve showcase objects)
     scene.children.forEach(child => {
-        if (child.name !== 'showcase-bear' && child.userData && !child.userData.isStatic) {
+        if (child.name !== 'showcase-bear' && child.userData && !child.userData.isStatic && !child.userData.isShowcase) {
              if(child.name === 'fish' || child.name === 'bear') {
                 child.visible = false;
              }
@@ -105,10 +111,12 @@ function setupStartScreen() {
         if(quickFishName) quickFishName.textContent = selectedFishInfo.name;
         if(quickFishImg) quickFishImg.src = selectedFishInfo.asset;
 
-        createAndDisplayShowcaseBear();
+        // Delay showcase creation to ensure UI updates are complete
+        setTimeout(() => createAndDisplayShowcaseBear(), 50);
     });
     
-    createAndDisplayShowcaseBear();
+    // Always create showcase bear, but delay to avoid conflicts
+    setTimeout(() => createAndDisplayShowcaseBear(), 100);
     showStart(isFirstLoad);
     isFirstLoad = false;
     startButton.innerText = 'START';
