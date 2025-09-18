@@ -40,39 +40,32 @@ function refreshShowcase() {
     showcaseBear.rotation.set(0, 0, 0); // Face camera
     scene.add(showcaseBear);
     
-    // Wait a frame to ensure bear is fully set up, then create and attach fish
-    setTimeout(() => {
-        // Create fish showcase
-        const fishOptions = { skipSceneAdd: true };
-        showcaseFish = createFish(scene, 0, playerProgress.selectedFish, fishOptions);
-        showcaseFish.name = 'showcase-fish';  
+    // Create and attach fish immediately (no timeout)
+    const fishOptions = { skipSceneAdd: true };
+    showcaseFish = createFish(scene, 0, playerProgress.selectedFish, fishOptions);
+    showcaseFish.name = 'showcase-fish';
+    showcaseFish.userData.isShowcase = true;
+    const rightArm = showcaseBear.getObjectByName('rightArm');
+    if (rightArm) {
+        rightArm.visible = true;
+        showcaseFish.position.set(0, 0, 0);
+        showcaseFish.rotation.set(0, 0, 0);
+        showcaseFish.scale.set(1, 1, 1);
+        rightArm.add(showcaseFish);
+        showcaseFish.visible = true;
+        showcaseFish.position.set(0.1, -0.7, 0.4);
+        showcaseFish.rotation.set(-Math.PI / 4, Math.PI / 2, Math.PI);
+        showcaseFish.scale.set(0.5, 0.5, 0.5);
+    } else {
+        console.warn('Right arm not found on showcase bear, using fallback position');
+        showcaseFish.position.set(2.0, 2.3, -1.5);
+        showcaseFish.visible = true;
+        scene.add(showcaseFish);
+    }
 
-        // Find the right arm and attach fish
-        const rightArm = showcaseBear.getObjectByName('rightArm');
-        if (rightArm) {
-            // Clear any existing transformations
-            showcaseFish.position.set(0, 0, 0);
-            showcaseFish.rotation.set(0, 0, 0);
-            showcaseFish.scale.set(1, 1, 1);
-            
-            // Parent fish to arm
-            rightArm.add(showcaseFish);
-            
-            // Set relative position, rotation, and scale
-            showcaseFish.position.set(0.1, -0.7, 0.4);
-            showcaseFish.rotation.set(-Math.PI / 4, Math.PI / 2, Math.PI);
-            showcaseFish.scale.set(0.5, 0.5, 0.5);
-        } else {
-            console.warn('Right arm not found on showcase bear, using fallback position');
-            // Fallback - add to scene directly
-            showcaseFish.position.set(2.0, 2.3, -1.5);
-            scene.add(showcaseFish);
-        }
-
-        // Disable fish movement animations
-        if (showcaseFish.userData?.velocity) showcaseFish.userData.velocity.set(0, 0, 0);
-        if (showcaseFish.userData) showcaseFish.userData.swimAmplitude = 0;
-    }, 10); // Small delay to ensure bear is ready
+    // Disable fish movement animations
+    if (showcaseFish.userData?.velocity) showcaseFish.userData.velocity.set(0, 0, 0);
+    if (showcaseFish.userData) showcaseFish.userData.swimAmplitude = 0;
 }
 
 function setupStartScreen() {
