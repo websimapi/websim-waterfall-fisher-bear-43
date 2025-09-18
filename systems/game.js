@@ -35,20 +35,28 @@ function refreshShowcase() {
     showcaseBear.rotation.set(0, 0, 0); // Face camera
     scene.add(showcaseBear);
     // Fish showcase
-    showcaseFish = createFish(scene, 0, playerProgress.selectedFish);
+    const fishOptions = { skipSceneAdd: true };
+    showcaseFish = createFish(scene, 0, playerProgress.selectedFish, fishOptions);
     showcaseFish.name = 'showcase-fish';  
 
     // Attach fish to bear's hand
     const rightArm = showcaseBear.getObjectByName('rightArm');
     if (rightArm) {
-        scene.remove(showcaseFish); // remove from main scene to add to arm
+        // Reset transformations before parenting to ensure correct local positioning
+        showcaseFish.position.set(0, 0, 0);
+        showcaseFish.rotation.set(0, 0, 0);
+        showcaseFish.scale.set(1, 1, 1);
+        
         rightArm.add(showcaseFish);
+        
+        // Now set the position, rotation, and scale relative to the arm
         showcaseFish.position.set(0.1, -0.7, 0.4);
         showcaseFish.rotation.set(-Math.PI / 4, Math.PI / 2, Math.PI);
         showcaseFish.scale.set(0.5, 0.5, 0.5);
     } else {
-        // Fallback position if arm isn't found
+        // Fallback if arm isn't found - add to scene directly
         showcaseFish.position.set(2.0, 2.3, -1.5);
+        scene.add(showcaseFish);
     }
 
     if (showcaseFish.userData?.velocity) showcaseFish.userData.velocity.set(0, 0, 0);

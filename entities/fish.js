@@ -93,7 +93,9 @@ export function createFish(scene, score = 0, type = 'classic', opts = {}) {
         pattern: opts.pattern || ['sine','zigzag','drift'][Math.floor(Math.random()*3)],
         drift: 0
     };
-    scene.add(group);
+    if (!opts.skipSceneAdd) {
+        scene.add(group);
+    }
     return group;
 }
 
