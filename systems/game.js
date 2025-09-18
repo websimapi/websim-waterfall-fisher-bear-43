@@ -21,46 +21,58 @@ const gravity = new THREE.Vector3(0, -0.05, 0);
 let isFirstLoad = true;
 
 function refreshShowcase() {
-    if (showcaseBear) { scene.remove(showcaseBear); showcaseBear = null; }
+    // Clean up existing showcase objects
+    if (showcaseBear) { 
+        scene.remove(showcaseBear); 
+        showcaseBear = null; 
+    }
     if (showcaseFish) { 
         if(showcaseFish.parent) showcaseFish.parent.remove(showcaseFish);
         else scene.remove(showcaseFish); 
         showcaseFish = null; 
     }
-    // Bear showcase
+    
+    // Create showcase bear - ensure it's fully created before proceeding
     showcaseBear = createBear(playerProgress.selectedBear);
     showcaseBear.name = 'showcase-bear';
-    showcaseBear.userData.isShowcase = true; // Add a flag to identify the showcase bear
+    showcaseBear.userData.isShowcase = true;
     showcaseBear.position.set(0, 4.65, 0.8);
     showcaseBear.rotation.set(0, 0, 0); // Face camera
     scene.add(showcaseBear);
-    // Fish showcase
-    const fishOptions = { skipSceneAdd: true };
-    showcaseFish = createFish(scene, 0, playerProgress.selectedFish, fishOptions);
-    showcaseFish.name = 'showcase-fish';  
+    
+    // Wait a frame to ensure bear is fully set up, then create and attach fish
+    setTimeout(() => {
+        // Create fish showcase
+        const fishOptions = { skipSceneAdd: true };
+        showcaseFish = createFish(scene, 0, playerProgress.selectedFish, fishOptions);
+        showcaseFish.name = 'showcase-fish';  
 
-    // Attach fish to bear's hand
-    const rightArm = showcaseBear.getObjectByName('rightArm');
-    if (rightArm) {
-        // Reset transformations before parenting to ensure correct local positioning
-        showcaseFish.position.set(0, 0, 0);
-        showcaseFish.rotation.set(0, 0, 0);
-        showcaseFish.scale.set(1, 1, 1);
-        
-        rightArm.add(showcaseFish);
-        
-        // Now set the position, rotation, and scale relative to the arm
-        showcaseFish.position.set(0.1, -0.7, 0.4);
-        showcaseFish.rotation.set(-Math.PI / 4, Math.PI / 2, Math.PI);
-        showcaseFish.scale.set(0.5, 0.5, 0.5);
-    } else {
-        // Fallback if arm isn't found - add to scene directly
-        showcaseFish.position.set(2.0, 2.3, -1.5);
-        scene.add(showcaseFish);
-    }
+        // Find the right arm and attach fish
+        const rightArm = showcaseBear.getObjectByName('rightArm');
+        if (rightArm) {
+            // Clear any existing transformations
+            showcaseFish.position.set(0, 0, 0);
+            showcaseFish.rotation.set(0, 0, 0);
+            showcaseFish.scale.set(1, 1, 1);
+            
+            // Parent fish to arm
+            rightArm.add(showcaseFish);
+            
+            // Set relative position, rotation, and scale
+            showcaseFish.position.set(0.1, -0.7, 0.4);
+            showcaseFish.rotation.set(-Math.PI / 4, Math.PI / 2, Math.PI);
+            showcaseFish.scale.set(0.5, 0.5, 0.5);
+        } else {
+            console.warn('Right arm not found on showcase bear, using fallback position');
+            // Fallback - add to scene directly
+            showcaseFish.position.set(2.0, 2.3, -1.5);
+            scene.add(showcaseFish);
+        }
 
-    if (showcaseFish.userData?.velocity) showcaseFish.userData.velocity.set(0, 0, 0);
-    if (showcaseFish.userData) showcaseFish.userData.swimAmplitude = 0;
+        // Disable fish movement animations
+        if (showcaseFish.userData?.velocity) showcaseFish.userData.velocity.set(0, 0, 0);
+        if (showcaseFish.userData) showcaseFish.userData.swimAmplitude = 0;
+    }, 10); // Small delay to ensure bear is ready
 }
 
 function setupStartScreen() {
